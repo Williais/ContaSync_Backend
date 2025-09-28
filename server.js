@@ -75,9 +75,10 @@ const isAuth = (req, res, next) => {
     else { res.status(401).json({ mensagem: 'Não autorizado.' }); }
 };
 
-// ================================================================= //
-//                       ROTAS DA APLICAÇÃO                          //
-// ================================================================= //
+//verificar se a API está no ar.
+app.get('/', (req, res) => {
+    res.status(200).json({ status: 'API is running' });
+});
 
 // --- ROTAS DE AUTENTICAÇÃO ---
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
