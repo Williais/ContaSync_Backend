@@ -1,4 +1,5 @@
 import express from 'express';
+import connectPgSimple from 'connect-pg-simple';
 import pg from 'pg';
 import cors from 'cors';
 import 'dotenv/config';
@@ -7,25 +8,34 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
 
 const app = express();
-const PORT = 3000;
-
-// MIDDLEWARES E CONFIG
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
-app.use(express.json());
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 }
-}));
-app.use(passport.initialize());
-app.use(passport.session());
+const pgSession = connectPgSimple(session)
 
 // CONEXÃO COM O BANCO DE DADOS
 const { Pool } = pg;
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL
 });
+
+// MIDDLEWARES E CONFIG
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(express.json());
+app.use(session({
+    store: new pgSession({
+        pool: pool,
+        tableName: 'user_sessions' 
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true
+    }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 // ESTRATÉGIA DE AUTENTICAÇÃO
 passport.use(new GoogleStrategy({
@@ -203,6 +213,7 @@ app.delete('/transacoes/:id', isAuth, async (req, res) => {
 });
 
 // INICIALIZAÇÃO DO SERVIDOR
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+const PORT_RENDER = process.env.PORT || 3000;
+app.listen(PORT_RENDER, '0.0.0.0', () => {
+  console.log(`Servidor rodando na porta ${PORT_RENDER}`);
 });
