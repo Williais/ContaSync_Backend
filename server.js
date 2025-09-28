@@ -8,6 +8,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
 
 const app = express();
+app.set('trust proxy', 1)
 const pgSession = connectPgSimple(session)
 
 // CONEXÃO COM O BANCO DE DADOS
